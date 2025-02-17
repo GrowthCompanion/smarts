@@ -109,7 +109,7 @@ const Index = () => {
             <section className="text-center space-y-4 py-12">
               <div className="flex justify-center mb-8">
                 <img
-                  src="/api/placeholder/400/320"
+                  src="/lovable-uploads/9b502ecd-6762-4be7-815a-ba58aa69b2d5.png"
                   alt="SmartStudyBot.AI Logo"
                   className="h-24 mb-4"
                 />
