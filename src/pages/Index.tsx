@@ -20,12 +20,6 @@ interface StudyDay {
   review: boolean;
 }
 
-interface Resource {
-  title: string;
-  url: string;
-  type: 'article' | 'video' | 'tutorial';
-}
-
 interface QuizQuestion {
   question: string;
   options: string[];
@@ -40,57 +34,65 @@ const Index = () => {
   });
 
   const [showDashboard, setShowDashboard] = useState(false);
-  const [studyPlan, setStudyPlan] = useState<any>(null);
+  const [studyPlan, setStudyPlan] = useState<string | null>(null); // Store the plan as a string
   const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[]>([]);
   const [selectedAnswers, setSelectedAnswers] = useState<Record<number, string>>({});
   const [showResults, setShowResults] = useState(false);
 
   const handleStartStudying = async () => {
     if (studyConfig.topic.trim() && studyConfig.duration.trim() && studyConfig.lessons.trim()) {
-      // Fetch study plan from backend
-      const response = await fetch("https://backendstudy.onrender.com/generate-plan", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          topic: studyConfig.topic,
-          num_days: parseInt(studyConfig.duration),  // Use the duration provided by the user
-          difficulty: "Medium",  // You can make this dynamic as well
-        }),
-      });
+      try {
+        // Fetch study plan from backend
+        const response = await fetch("https://backendstudy.onrender.com/generate-plan", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            topic: studyConfig.topic,
+            num_days: parseInt(studyConfig.duration), // Use the duration provided by the user
+            difficulty: "Medium", // You can make this dynamic as well
+          }),
+        });
 
-      if (response.ok) {
-        const data = await response.json();
-        setStudyPlan({ days: data.plan });  // Update with actual structure
-        setShowDashboard(true);
-      } else {
-        console.error("Failed to fetch study plan");
+        if (response.ok) {
+          const data = await response.json();
+          setStudyPlan(data.plan); // Store the plan as a string
+          setShowDashboard(true);
+        } else {
+          console.error("Failed to fetch study plan");
+        }
+      } catch (error) {
+        console.error("Error fetching study plan:", error);
       }
     }
   };
 
   const handleGenerateQuiz = async () => {
-    const response = await fetch("https://backendstudy.onrender.com/generate-quiz", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        topic: studyConfig.topic,
-        quiz_type: "Multiple Choice",  // You can make this dynamic as well
-        num_questions: 5,  // You can make this dynamic as well
-      }),
-    });
+    try {
+      const response = await fetch("https://backendstudy.onrender.com/generate-quiz", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          topic: studyConfig.topic,
+          quiz_type: "Multiple Choice", // You can make this dynamic as well
+          num_questions: 5, // You can make this dynamic as well
+        }),
+      });
 
-    if (response.ok) {
-      const data = await response.json();
-      setQuizQuestions(data.questions);  // Update with actual structure
-    } else {
-      console.error("Failed to fetch quiz questions");
+      if (response.ok) {
+        const data = await response.json();
+        setQuizQuestions(data.questions); // Update with actual structure
+      } else {
+        console.error("Failed to fetch quiz questions");
+      }
+    } catch (error) {
+      console.error("Error fetching quiz questions:", error);
     }
   };
 
   const handleAnswerSelect = (questionIndex: number, value: string) => {
-    setSelectedAnswers(prev => ({
+    setSelectedAnswers((prev) => ({
       ...prev,
-      [questionIndex]: value
+      [questionIndex]: value,
     }));
   };
 
@@ -176,7 +178,7 @@ const Dashboard = ({
   onSubmitQuiz,
 }: {
   studyConfig: StudyConfig;
-  studyPlan: any;
+  studyPlan: string | null;
   quizQuestions: QuizQuestion[];
   onGenerateQuiz: () => void;
   selectedAnswers: Record<number, string>;
@@ -203,19 +205,7 @@ const Dashboard = ({
               <Book className="w-5 h-5" /> Study Plan
             </h3>
             <div className="space-y-4">
-              {studyPlan?.days?.map((day: StudyDay, index: number) => (
-                <div key={index} className="p-4 bg-secondary/50 rounded-lg">
-                  <h4 className="font-semibold mb-2">Day {day.day}</h4>
-                  <ul className="space-y-2">
-                    {day.tasks.map((task: string, taskIndex: number) => (
-                      <li key={taskIndex} className="flex items-start gap-2">
-                        <span className="text-primary">•</span>
-                        {task}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
+              <pre className="whitespace-pre-wrap">{studyPlan}</pre>
             </div>
           </div>
         </Card>
@@ -229,7 +219,7 @@ const Dashboard = ({
               <p className="text-muted-foreground">
                 Test your knowledge on Linear Equations
               </p>
-              <Button 
+              <Button
                 className="w-full bg-primary hover:bg-primary/90"
                 onClick={onGenerateQuiz}
               >
@@ -262,8 +252,8 @@ const Dashboard = ({
                   )}
                 </div>
               ))}
-              <Button 
-                className="w-full" 
+              <Button
+                className="w-full"
                 onClick={onSubmitQuiz}
                 disabled={Object.keys(selectedAnswers).length < quizQuestions.length}
               >
