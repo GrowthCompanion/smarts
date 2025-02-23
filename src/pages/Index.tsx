@@ -28,7 +28,7 @@ const Index = () => {
     setError(null);
 
     try {
-      const response = await fetch("https://your-backend-url.com/generate-plan", {
+      const response = await fetch("https://backendstudy.onrender.com/generate-plan", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -61,7 +61,7 @@ const Index = () => {
     setError(null);
 
     try {
-      const response = await fetch("https://your-backend-url.com/generate-quiz", {
+      const response = await fetch("https://backendstudy.onrender.com/generate-quiz", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
