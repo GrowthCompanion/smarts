@@ -40,66 +40,63 @@ const Index = () => {
   });
 
   const [showDashboard, setShowDashboard] = useState(false);
+  const [studyPlan, setStudyPlan] = useState<any>(null);
+  const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[]>([]);
+  const [selectedAnswers, setSelectedAnswers] = useState<Record<number, string>>({});
+  const [showResults, setShowResults] = useState(false);
 
-  const handleStartStudying = () => {
+  const handleStartStudying = async () => {
     if (studyConfig.topic.trim() && studyConfig.duration.trim() && studyConfig.lessons.trim()) {
-      setShowDashboard(true);
+      // Fetch study plan from backend
+      const response = await fetch("https://backendstudy.onrender.com/generate-plan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          topic: studyConfig.topic,
+          num_days: parseInt(studyConfig.duration),  // Use the duration provided by the user
+          difficulty: "Medium",  // You can make this dynamic as well
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setStudyPlan({ days: data.plan });  // Update with actual structure
+        setShowDashboard(true);
+      } else {
+        console.error("Failed to fetch study plan");
+      }
     }
   };
 
-  // Updated study plan for linear equations
-  const studyPlan = {
-    days: [
-      {
-        day: 1,
-        tasks: ["Introduction to Linear Equations", "Understanding Slope-Intercept Form (y = mx + b)", "Practice identifying slopes and y-intercepts"],
-        quiz: true,
-        review: true,
-      },
-      {
-        day: 2,
-        tasks: ["Point-Slope Form of Linear Equations", "Converting between forms", "Graphing linear equations"],
-        quiz: true,
-        review: true,
-      },
-      {
-        day: 3,
-        tasks: ["Systems of Linear Equations", "Solving by substitution", "Solving by elimination"],
-        quiz: true,
-        review: true,
-      },
-      {
-        day: 4,
-        tasks: ["Word Problems with Linear Equations", "Real-world applications", "Practice problem-solving"],
-        quiz: true,
-        review: true,
-      },
-      {
-        day: 5,
-        tasks: ["Advanced Linear Equation Concepts", "Parallel and perpendicular lines", "Review all concepts"],
-        quiz: true,
-        review: true,
-      },
-    ],
+  const handleGenerateQuiz = async () => {
+    const response = await fetch("https://backendstudy.onrender.com/generate-quiz", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        topic: studyConfig.topic,
+        quiz_type: "Multiple Choice",  // You can make this dynamic as well
+        num_questions: 5,  // You can make this dynamic as well
+      }),
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      setQuizQuestions(data.questions);  // Update with actual structure
+    } else {
+      console.error("Failed to fetch quiz questions");
+    }
   };
 
-  const resources = [
-    {
-      title: "Linear Equations Basics",
-      url: "https://example.com/linear-equations",
-      type: 'article',
-    },
-    {
-      title: "Graphing Linear Equations",
-      url: "https://example.com/graphing-linear",
-      type: 'video',
-    },
-    {
-      title: "Systems of Equations Tutorial",
-      url: "https://example.com/systems",
-      type: 'tutorial',
-    },
-  ];
+  const handleAnswerSelect = (questionIndex: number, value: string) => {
+    setSelectedAnswers(prev => ({
+      ...prev,
+      [questionIndex]: value
+    }));
+  };
+
+  const handleSubmitQuiz = () => {
+    setShowResults(true);
+  };
 
   return (
     <div className="min-h-screen p-6 bg-gradient-to-b from-background to-secondary">
@@ -152,46 +149,41 @@ const Index = () => {
             </section>
           </div>
         ) : (
-          <Dashboard studyConfig={studyConfig} studyPlan={studyPlan} resources={resources} />
+          <Dashboard
+            studyConfig={studyConfig}
+            studyPlan={studyPlan}
+            quizQuestions={quizQuestions}
+            onGenerateQuiz={handleGenerateQuiz}
+            selectedAnswers={selectedAnswers}
+            onAnswerSelect={handleAnswerSelect}
+            showResults={showResults}
+            onSubmitQuiz={handleSubmitQuiz}
+          />
         )}
       </main>
     </div>
   );
 };
 
-const Dashboard = ({ studyConfig, studyPlan, resources }: { studyConfig: StudyConfig; studyPlan: any; resources: Resource[] }) => {
-  const [selectedAnswers, setSelectedAnswers] = useState<Record<number, string>>({});
-  const [showResults, setShowResults] = useState(false);
-
-  const quizQuestions: QuizQuestion[] = [
-    {
-      question: "What is the slope in the equation y = 3x + 4?",
-      options: ["4", "3", "0", "-3"],
-      correctAnswer: 1
-    },
-    {
-      question: "Which form of a linear equation is y = mx + b?",
-      options: ["Point-slope form", "Standard form", "Slope-intercept form", "General form"],
-      correctAnswer: 2
-    },
-    {
-      question: "In the equation 2x + 3y = 12, what is the y-intercept?",
-      options: ["4", "12", "2", "3"],
-      correctAnswer: 0
-    }
-  ];
-
-  const handleAnswerSelect = (questionIndex: number, value: string) => {
-    setSelectedAnswers(prev => ({
-      ...prev,
-      [questionIndex]: value
-    }));
-  };
-
-  const handleSubmitQuiz = () => {
-    setShowResults(true);
-  };
-
+const Dashboard = ({
+  studyConfig,
+  studyPlan,
+  quizQuestions,
+  onGenerateQuiz,
+  selectedAnswers,
+  onAnswerSelect,
+  showResults,
+  onSubmitQuiz,
+}: {
+  studyConfig: StudyConfig;
+  studyPlan: any;
+  quizQuestions: QuizQuestion[];
+  onGenerateQuiz: () => void;
+  selectedAnswers: Record<number, string>;
+  onAnswerSelect: (questionIndex: number, value: string) => void;
+  showResults: boolean;
+  onSubmitQuiz: () => void;
+}) => {
   return (
     <div className="space-y-6 fade-in">
       <header className="flex justify-between items-center">
@@ -211,11 +203,11 @@ const Dashboard = ({ studyConfig, studyPlan, resources }: { studyConfig: StudyCo
               <Book className="w-5 h-5" /> Study Plan
             </h3>
             <div className="space-y-4">
-              {studyPlan.days.map((day: StudyDay, index: number) => (
+              {studyPlan?.days?.map((day: StudyDay, index: number) => (
                 <div key={index} className="p-4 bg-secondary/50 rounded-lg">
                   <h4 className="font-semibold mb-2">Day {day.day}</h4>
                   <ul className="space-y-2">
-                    {day.tasks.map((task, taskIndex) => (
+                    {day.tasks.map((task: string, taskIndex: number) => (
                       <li key={taskIndex} className="flex items-start gap-2">
                         <span className="text-primary">•</span>
                         {task}
@@ -239,9 +231,9 @@ const Dashboard = ({ studyConfig, studyPlan, resources }: { studyConfig: StudyCo
               </p>
               <Button 
                 className="w-full bg-primary hover:bg-primary/90"
-                onClick={() => setShowResults(false)}
+                onClick={onGenerateQuiz}
               >
-                Start Quiz
+                Generate Quiz
               </Button>
             </div>
           </Card>
@@ -253,7 +245,7 @@ const Dashboard = ({ studyConfig, studyPlan, resources }: { studyConfig: StudyCo
                 <div key={index} className="space-y-4">
                   <p className="font-medium">{index + 1}. {q.question}</p>
                   <RadioGroup
-                    onValueChange={(value) => handleAnswerSelect(index, value)}
+                    onValueChange={(value) => onAnswerSelect(index, value)}
                     value={selectedAnswers[index]}
                   >
                     {q.options.map((option, optionIndex) => (
@@ -272,7 +264,7 @@ const Dashboard = ({ studyConfig, studyPlan, resources }: { studyConfig: StudyCo
               ))}
               <Button 
                 className="w-full" 
-                onClick={handleSubmitQuiz}
+                onClick={onSubmitQuiz}
                 disabled={Object.keys(selectedAnswers).length < quizQuestions.length}
               >
                 Submit Answers
@@ -281,21 +273,6 @@ const Dashboard = ({ studyConfig, studyPlan, resources }: { studyConfig: StudyCo
           </Card>
         </div>
       </div>
-
-      <Card className="p-6 glass-card">
-        <h3 className="text-xl font-semibold mb-4">Learning Resources</h3>
-        <div className="grid md:grid-cols-3 gap-4">
-          {resources.map((resource, index) => (
-            <div key={index} className="p-4 bg-secondary rounded-lg">
-              <h4 className="font-semibold">{resource.title}</h4>
-              <p className="text-muted-foreground">{resource.type}</p>
-              <a href={resource.url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
-                Visit Resource
-              </a>
-            </div>
-          ))}
-        </div>
-      </Card>
     </div>
   );
 };
