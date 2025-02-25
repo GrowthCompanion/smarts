@@ -20,6 +20,12 @@ interface StudyDay {
   review: boolean;
 }
 
+interface Resource {
+  title: string;
+  url: string;
+  type: 'article' | 'video' | 'tutorial';
+}
+
 interface QuizQuestion {
   question: string;
   options: string[];
@@ -34,71 +40,66 @@ const Index = () => {
   });
 
   const [showDashboard, setShowDashboard] = useState(false);
-  const [studyPlan, setStudyPlan] = useState<string | null>(null); // Store the plan as a string
-  const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[]>([]);
-  const [selectedAnswers, setSelectedAnswers] = useState<Record<number, string>>({});
-  const [showResults, setShowResults] = useState(false);
 
-  const handleStartStudying = async () => {
+  const handleStartStudying = () => {
     if (studyConfig.topic.trim() && studyConfig.duration.trim() && studyConfig.lessons.trim()) {
-      try {
-        // Fetch study plan from backend
-        const response = await fetch("https://backendstudy.onrender.com/generate-plan", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            topic: studyConfig.topic,
-            num_days: parseInt(studyConfig.duration), // Use the duration provided by the user
-            difficulty: "Medium", // You can make this dynamic as well
-          }),
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          setStudyPlan(data.plan); // Store the plan as a string
-          setShowDashboard(true);
-        } else {
-          console.error("Failed to fetch study plan");
-        }
-      } catch (error) {
-        console.error("Error fetching study plan:", error);
-      }
+      setShowDashboard(true);
     }
   };
 
-  const handleGenerateQuiz = async () => {
-    try {
-      const response = await fetch("https://backendstudy.onrender.com/generate-quiz", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          topic: studyConfig.topic,
-          quiz_type: "Multiple Choice", // You can make this dynamic as well
-          num_questions: 5, // You can make this dynamic as well
-        }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setQuizQuestions(data.questions); // Update with actual structure
-      } else {
-        console.error("Failed to fetch quiz questions");
-      }
-    } catch (error) {
-      console.error("Error fetching quiz questions:", error);
-    }
+  // Updated study plan for linear equations
+  const studyPlan = {
+    days: [
+      {
+        day: 1,
+        tasks: ["Introduction to Linear Equations", "Understanding Slope-Intercept Form (y = mx + b)", "Practice identifying slopes and y-intercepts"],
+        quiz: true,
+        review: true,
+      },
+      {
+        day: 2,
+        tasks: ["Point-Slope Form of Linear Equations", "Converting between forms", "Graphing linear equations"],
+        quiz: true,
+        review: true,
+      },
+      {
+        day: 3,
+        tasks: ["Systems of Linear Equations", "Solving by substitution", "Solving by elimination"],
+        quiz: true,
+        review: true,
+      },
+      {
+        day: 4,
+        tasks: ["Word Problems with Linear Equations", "Real-world applications", "Practice problem-solving"],
+        quiz: true,
+        review: true,
+      },
+      {
+        day: 5,
+        tasks: ["Advanced Linear Equation Concepts", "Parallel and perpendicular lines", "Review all concepts"],
+        quiz: true,
+        review: true,
+      },
+    ],
   };
 
-  const handleAnswerSelect = (questionIndex: number, value: string) => {
-    setSelectedAnswers((prev) => ({
-      ...prev,
-      [questionIndex]: value,
-    }));
-  };
-
-  const handleSubmitQuiz = () => {
-    setShowResults(true);
-  };
+  const resources = [
+    {
+      title: "Linear Equations Basics",
+      url: "https://example.com/linear-equations",
+      type: 'article',
+    },
+    {
+      title: "Graphing Linear Equations",
+      url: "https://example.com/graphing-linear",
+      type: 'video',
+    },
+    {
+      title: "Systems of Equations Tutorial",
+      url: "https://example.com/systems",
+      type: 'tutorial',
+    },
+  ];
 
   return (
     <div className="min-h-screen p-6 bg-gradient-to-b from-background to-secondary">
@@ -151,41 +152,46 @@ const Index = () => {
             </section>
           </div>
         ) : (
-          <Dashboard
-            studyConfig={studyConfig}
-            studyPlan={studyPlan}
-            quizQuestions={quizQuestions}
-            onGenerateQuiz={handleGenerateQuiz}
-            selectedAnswers={selectedAnswers}
-            onAnswerSelect={handleAnswerSelect}
-            showResults={showResults}
-            onSubmitQuiz={handleSubmitQuiz}
-          />
+          <Dashboard studyConfig={studyConfig} studyPlan={studyPlan} resources={resources} />
         )}
       </main>
     </div>
   );
 };
 
-const Dashboard = ({
-  studyConfig,
-  studyPlan,
-  quizQuestions,
-  onGenerateQuiz,
-  selectedAnswers,
-  onAnswerSelect,
-  showResults,
-  onSubmitQuiz,
-}: {
-  studyConfig: StudyConfig;
-  studyPlan: string | null;
-  quizQuestions: QuizQuestion[];
-  onGenerateQuiz: () => void;
-  selectedAnswers: Record<number, string>;
-  onAnswerSelect: (questionIndex: number, value: string) => void;
-  showResults: boolean;
-  onSubmitQuiz: () => void;
-}) => {
+const Dashboard = ({ studyConfig, studyPlan, resources }: { studyConfig: StudyConfig; studyPlan: any; resources: Resource[] }) => {
+  const [selectedAnswers, setSelectedAnswers] = useState<Record<number, string>>({});
+  const [showResults, setShowResults] = useState(false);
+
+  const quizQuestions: QuizQuestion[] = [
+    {
+      question: "What is the slope in the equation y = 3x + 4?",
+      options: ["4", "3", "0", "-3"],
+      correctAnswer: 1
+    },
+    {
+      question: "Which form of a linear equation is y = mx + b?",
+      options: ["Point-slope form", "Standard form", "Slope-intercept form", "General form"],
+      correctAnswer: 2
+    },
+    {
+      question: "In the equation 2x + 3y = 12, what is the y-intercept?",
+      options: ["4", "12", "2", "3"],
+      correctAnswer: 0
+    }
+  ];
+
+  const handleAnswerSelect = (questionIndex: number, value: string) => {
+    setSelectedAnswers(prev => ({
+      ...prev,
+      [questionIndex]: value
+    }));
+  };
+
+  const handleSubmitQuiz = () => {
+    setShowResults(true);
+  };
+
   return (
     <div className="space-y-6 fade-in">
       <header className="flex justify-between items-center">
@@ -205,7 +211,19 @@ const Dashboard = ({
               <Book className="w-5 h-5" /> Study Plan
             </h3>
             <div className="space-y-4">
-              <pre className="whitespace-pre-wrap">{studyPlan}</pre>
+              {studyPlan.days.map((day: StudyDay, index: number) => (
+                <div key={index} className="p-4 bg-secondary/50 rounded-lg">
+                  <h4 className="font-semibold mb-2">Day {day.day}</h4>
+                  <ul className="space-y-2">
+                    {day.tasks.map((task, taskIndex) => (
+                      <li key={taskIndex} className="flex items-start gap-2">
+                        <span className="text-primary">•</span>
+                        {task}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
             </div>
           </div>
         </Card>
@@ -219,11 +237,11 @@ const Dashboard = ({
               <p className="text-muted-foreground">
                 Test your knowledge on Linear Equations
               </p>
-              <Button
+              <Button 
                 className="w-full bg-primary hover:bg-primary/90"
-                onClick={onGenerateQuiz}
+                onClick={() => setShowResults(false)}
               >
-                Generate Quiz
+                Start Quiz
               </Button>
             </div>
           </Card>
@@ -235,7 +253,7 @@ const Dashboard = ({
                 <div key={index} className="space-y-4">
                   <p className="font-medium">{index + 1}. {q.question}</p>
                   <RadioGroup
-                    onValueChange={(value) => onAnswerSelect(index, value)}
+                    onValueChange={(value) => handleAnswerSelect(index, value)}
                     value={selectedAnswers[index]}
                   >
                     {q.options.map((option, optionIndex) => (
@@ -252,9 +270,9 @@ const Dashboard = ({
                   )}
                 </div>
               ))}
-              <Button
-                className="w-full"
-                onClick={onSubmitQuiz}
+              <Button 
+                className="w-full" 
+                onClick={handleSubmitQuiz}
                 disabled={Object.keys(selectedAnswers).length < quizQuestions.length}
               >
                 Submit Answers
@@ -263,8 +281,22 @@ const Dashboard = ({
           </Card>
         </div>
       </div>
+
+      <Card className="p-6 glass-card">
+        <h3 className="text-xl font-semibold mb-4">Learning Resources</h3>
+        <div className="grid md:grid-cols-3 gap-4">
+          {resources.map((resource, index) => (
+            <div key={index} className="p-4 bg-secondary rounded-lg">
+              <h4 className="font-semibold">{resource.title}</h4>
+              <p className="text-muted-foreground">{resource.type}</p>
+              <a href={resource.url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                Visit Resource
+              </a>
+            </div>
+          ))}
+        </div>
+      </Card>
     </div>
   );
 };
-
 export default Index;
