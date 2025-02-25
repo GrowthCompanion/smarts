@@ -115,7 +115,7 @@ const Index = () => {
                 />
               </div>
               <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-                Your AI-powered study assistant for mastering linear equations
+                Your AI-powered study assistant
               </p>
               <div className="max-w-md mx-auto space-y-4 pt-8">
                 <div className="space-y-4">
